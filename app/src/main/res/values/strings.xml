@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">The Baking App</string>
+    <string name="recipe_detail">Recipe Details</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="recipe_ingredients_label">RECIPE INGREDIENTS</string>
+    <string name="previous">Previous</string>
+    <string name="next">next</string>
+    <string name="add_widget">Add widget</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="empty_view_text">NO INGREDIENTS TO DISPLAY</string>
+
+</resources>
