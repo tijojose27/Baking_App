@@ -57,8 +57,11 @@ public class BakingAppWidget extends AppWidgetProvider {
 
         String[] ingreds = listIngreds.split(",");
 
-        for (int appWidgetId : appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId, recipeName, ingreds);
+        if (ingreds.length > 0) {
+
+            for (int appWidgetId : appWidgetIds) {
+                updateAppWidget(context, appWidgetManager, appWidgetId, recipeName, ingreds);
+            }
         }
     }
 

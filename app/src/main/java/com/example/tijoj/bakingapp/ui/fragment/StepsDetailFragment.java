@@ -2,6 +2,8 @@ package com.example.tijoj.bakingapp.ui.fragment;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelUuid;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,7 +34,7 @@ import java.util.ArrayList;
 
 public class StepsDetailFragment extends Fragment {
 
-    public int position;
+    public int recipeStepPosition;
     public ArrayList<RecipesSteps> currRecipesSteps;
     public TextView stepDetailsTV;
     public Button prevButton;
@@ -49,29 +51,41 @@ public class StepsDetailFragment extends Fragment {
 
     public boolean isTwoPane;
 
-    public long mediaPosition;
-    public final String MEDIA_POSITION = "MEDIA POSITION";
+    public long playerPosition;
+    public final String PLAYER_POSITION="PLAYER POSITION";
+
+    public boolean shouldAutoPlay;
+    public final String AUTO_PLAY = "AUTO PLAY";
 
     public StepsDetailFragment() {
         // Required empty public constructor
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if(savedInstanceState!=null){
+            playerPosition = savedInstanceState.getLong(PLAYER_POSITION);
+            shouldAutoPlay = savedInstanceState.getBoolean(AUTO_PLAY);
+        }else {
+            playerPosition = C.TIME_UNSET;
+            shouldAutoPlay = true;
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        position = getArguments().getInt(Recipes.RECIPE_POSITION);
+        recipeStepPosition = getArguments().getInt(Recipes.RECIPE_POSITION);
         isTwoPane = getArguments().getBoolean("LAYOUT", false);
         currRecipesSteps = getArguments().getParcelableArrayList(Recipes.RECIPE_KEY);
 
-        currDescription = currRecipesSteps.get(position).getDescription();
-        currVideoUri = currRecipesSteps.get(position).getVideoURL();
-        currThumbnailUri = currRecipesSteps.get(position).getThumbnamilUrl();
+        currDescription = currRecipesSteps.get(recipeStepPosition).getDescription();
+        currVideoUri = currRecipesSteps.get(recipeStepPosition).getVideoURL();
+        currThumbnailUri = currRecipesSteps.get(recipeStepPosition).getThumbnamilUrl();
 
-        mediaPosition = C.TIME_UNSET;
-
-        // Inflate the layout for this fragment
+                // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_steps_detail, container, false);
 
         if (isTwoPane) {
@@ -90,11 +104,11 @@ public class StepsDetailFragment extends Fragment {
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (position < currRecipesSteps.size() - 1) {
-                    position++;
-                    currDescription = currRecipesSteps.get(position).getDescription();
-                    currVideoUri = currRecipesSteps.get(position).getVideoURL();
-                    currThumbnailUri = currRecipesSteps.get(position).getThumbnamilUrl();
+                if (recipeStepPosition < currRecipesSteps.size() - 1) {
+                    recipeStepPosition++;
+                    currDescription = currRecipesSteps.get(recipeStepPosition).getDescription();
+                    currVideoUri = currRecipesSteps.get(recipeStepPosition).getVideoURL();
+                    currThumbnailUri = currRecipesSteps.get(recipeStepPosition).getThumbnamilUrl();
                     updateUI(currDescription, currVideoUri, currThumbnailUri);
                 }
             }
@@ -103,10 +117,10 @@ public class StepsDetailFragment extends Fragment {
         prevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (position > 0) {
-                    position--;
-                    currDescription = currRecipesSteps.get(position).getDescription();
-                    currVideoUri = currRecipesSteps.get(position).getVideoURL();
+                if (recipeStepPosition > 0) {
+                    recipeStepPosition--;
+                    currDescription = currRecipesSteps.get(recipeStepPosition).getDescription();
+                    currVideoUri = currRecipesSteps.get(recipeStepPosition).getVideoURL();
                     updateUI(currDescription, currVideoUri, currThumbnailUri);
                 }
             }
@@ -151,11 +165,13 @@ public class StepsDetailFragment extends Fragment {
             stepsImageView.setVisibility(View.GONE);
             Uri uri = Uri.parse(mediaUri);
             MediaSource mediaSource = buildMediaSource(uri);
-            if(mediaPosition!=C.TIME_UNSET){
-                simpleExoPlayer.seekTo(mediaPosition);
+
+            if(playerPosition!=C.TIME_UNSET){
+                simpleExoPlayer.seekTo(playerPosition);
             }
+
             simpleExoPlayer.prepare(mediaSource);
-            simpleExoPlayer.setPlayWhenReady(true);
+            simpleExoPlayer.setPlayWhenReady(shouldAutoPlay);
         }
 
 
@@ -169,26 +185,33 @@ public class StepsDetailFragment extends Fragment {
 
     public void releasePlayer() {
         if (simpleExoPlayer != null) {
-            mediaPosition = simpleExoPlayer.getCurrentPosition();
-            simpleExoPlayer.stop();
+            playerPosition = simpleExoPlayer.getCurrentPosition();
+            shouldAutoPlay = simpleExoPlayer.getPlayWhenReady();
             simpleExoPlayer.release();
             simpleExoPlayer = null;
         }
     }
 
     private void checkButtons() {
-        if (position >= 0 && position < currRecipesSteps.size()) {
+        if (recipeStepPosition >= 0 && recipeStepPosition < currRecipesSteps.size()) {
             nextButton.setEnabled(true);
             prevButton.setEnabled(true);
         }
-        if (position >= currRecipesSteps.size() - 1) {
+        if (recipeStepPosition >= currRecipesSteps.size() - 1) {
             nextButton.setEnabled(false);
             prevButton.setEnabled(true);
         }
-        if (position <= 0) {
+        if (recipeStepPosition <= 0) {
             nextButton.setEnabled(true);
             prevButton.setEnabled(false);
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(PLAYER_POSITION, playerPosition);
+        outState.putBoolean(AUTO_PLAY, shouldAutoPlay);
     }
 
     @Override
@@ -197,12 +220,6 @@ public class StepsDetailFragment extends Fragment {
         updateUI(currDescription, currVideoUri, currThumbnailUri);
     }
 
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putLong(MEDIA_POSITION, mediaPosition);
-    }
 
     @Override
     public void onPause() {
