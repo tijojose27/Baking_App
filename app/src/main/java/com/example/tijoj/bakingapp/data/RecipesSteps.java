@@ -33,6 +33,10 @@ public class RecipesSteps implements Parcelable{
         thumbnamilUrl = in.readString();
     }
 
+    public int getRecipieStepsId() {
+        return recipieStepsId;
+    }
+
     public static final Creator<RecipesSteps> CREATOR = new Creator<RecipesSteps>() {
         @Override
         public RecipesSteps createFromParcel(Parcel in) {

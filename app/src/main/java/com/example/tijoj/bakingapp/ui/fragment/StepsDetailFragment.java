@@ -2,7 +2,6 @@ package com.example.tijoj.bakingapp.ui.fragment;
 
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -34,6 +33,7 @@ import java.util.ArrayList;
 
 public class StepsDetailFragment extends Fragment {
 
+
     public int recipeStepPosition;
     public ArrayList<RecipesSteps> currRecipesSteps;
     public TextView stepDetailsTV;
@@ -42,20 +42,20 @@ public class StepsDetailFragment extends Fragment {
     public SimpleExoPlayerView simpleExoPlayerView;
     public SimpleExoPlayer simpleExoPlayer;
     public ImageView stepsImageView;
-
     public String currDescription;
     public String currVideoUri;
     public String currThumbnailUri;
-
     public LinearLayout linearLayout;
-
     public boolean isTwoPane;
 
-    public long playerPosition;
-    public final String PLAYER_POSITION="PLAYER POSITION";
-
-    public boolean shouldAutoPlay;
+    public final String PLAYER_POSITION = "PLAYER POSITION";
     public final String AUTO_PLAY = "AUTO PLAY";
+    public final String PREVIOUS_POSITION = "PREVIOUS POSITION";
+
+    public long playerPosition;
+    public boolean shouldAutoPlay;
+    public int prevPosition;
+
 
     public StepsDetailFragment() {
         // Required empty public constructor
@@ -64,10 +64,18 @@ public class StepsDetailFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(savedInstanceState!=null){
-            playerPosition = savedInstanceState.getLong(PLAYER_POSITION);
-            shouldAutoPlay = savedInstanceState.getBoolean(AUTO_PLAY);
-        }else {
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(PLAYER_POSITION)) {
+                playerPosition = savedInstanceState.getLong(PLAYER_POSITION);
+            } else {
+                playerPosition = C.TIME_UNSET;
+            }
+            if (savedInstanceState.containsKey(AUTO_PLAY)) {
+                shouldAutoPlay = savedInstanceState.getBoolean(AUTO_PLAY);
+            } else {
+                shouldAutoPlay = true;
+            }
+        } else {
             playerPosition = C.TIME_UNSET;
             shouldAutoPlay = true;
         }
@@ -76,8 +84,13 @@ public class StepsDetailFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        recipeStepPosition = getArguments().getInt(Recipes.RECIPE_POSITION);
+        if(savedInstanceState!=null){
+            if(savedInstanceState.containsKey(PREVIOUS_POSITION)){
+                recipeStepPosition = savedInstanceState.getInt(PREVIOUS_POSITION);
+            }
+        }else {
+            recipeStepPosition = getArguments().getInt(Recipes.RECIPE_POSITION);
+        }
         isTwoPane = getArguments().getBoolean("LAYOUT", false);
         currRecipesSteps = getArguments().getParcelableArrayList(Recipes.RECIPE_KEY);
 
@@ -85,7 +98,7 @@ public class StepsDetailFragment extends Fragment {
         currVideoUri = currRecipesSteps.get(recipeStepPosition).getVideoURL();
         currThumbnailUri = currRecipesSteps.get(recipeStepPosition).getThumbnamilUrl();
 
-                // Inflate the layout for this fragment
+        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_steps_detail, container, false);
 
         if (isTwoPane) {
@@ -166,9 +179,10 @@ public class StepsDetailFragment extends Fragment {
             Uri uri = Uri.parse(mediaUri);
             MediaSource mediaSource = buildMediaSource(uri);
 
-            if(playerPosition!=C.TIME_UNSET){
+            if (playerPosition != C.TIME_UNSET) {
+                
                 simpleExoPlayer.seekTo(playerPosition);
-            }
+            }/**/
 
             simpleExoPlayer.prepare(mediaSource);
             simpleExoPlayer.setPlayWhenReady(shouldAutoPlay);
@@ -185,8 +199,6 @@ public class StepsDetailFragment extends Fragment {
 
     public void releasePlayer() {
         if (simpleExoPlayer != null) {
-            playerPosition = simpleExoPlayer.getCurrentPosition();
-            shouldAutoPlay = simpleExoPlayer.getPlayWhenReady();
             simpleExoPlayer.release();
             simpleExoPlayer = null;
         }
@@ -212,6 +224,7 @@ public class StepsDetailFragment extends Fragment {
         super.onSaveInstanceState(outState);
         outState.putLong(PLAYER_POSITION, playerPosition);
         outState.putBoolean(AUTO_PLAY, shouldAutoPlay);
+        outState.putInt(PREVIOUS_POSITION, prevPosition);
     }
 
     @Override
@@ -224,6 +237,11 @@ public class StepsDetailFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        if (simpleExoPlayer != null) {
+            playerPosition = simpleExoPlayer.getCurrentPosition();
+            shouldAutoPlay = simpleExoPlayer.getPlayWhenReady();
+        }
+        prevPosition = recipeStepPosition;
         releasePlayer();
     }
 
